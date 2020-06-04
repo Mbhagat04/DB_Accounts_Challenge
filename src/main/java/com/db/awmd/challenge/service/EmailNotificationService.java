@@ -1,10 +1,15 @@
 package com.db.awmd.challenge.service;
 
 import com.db.awmd.challenge.domain.Account;
+import com.db.awmd.challenge.web.AccountsController;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Slf4j
 public class EmailNotificationService implements NotificationService {
+
+  private static Logger log = LoggerFactory.getLogger(EmailNotificationService.class);
 
   @Override
   public void notifyAboutTransfer(Account account, String transferDescription) {

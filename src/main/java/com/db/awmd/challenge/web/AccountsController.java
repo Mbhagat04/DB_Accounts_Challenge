@@ -1,10 +1,15 @@
 package com.db.awmd.challenge.web;
 
 import com.db.awmd.challenge.domain.Account;
+import com.db.awmd.challenge.domain.TransferAccount;
 import com.db.awmd.challenge.exception.DuplicateAccountIdException;
+import com.db.awmd.challenge.exception.InsufficientBalanceException;
+import com.db.awmd.challenge.exception.TransferAccountException;
 import com.db.awmd.challenge.service.AccountsService;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -20,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/v1/accounts")
 @Slf4j
 public class AccountsController {
-
+  private static Logger log = LoggerFactory.getLogger(AccountsController.class);
   private final AccountsService accountsService;
 
   @Autowired
@@ -45,6 +50,17 @@ public class AccountsController {
   public Account getAccount(@PathVariable String accountId) {
     log.info("Retrieving account for id {}", accountId);
     return this.accountsService.getAccount(accountId);
+  }
+
+  @PostMapping(path = "/transfer", consumes = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<String> transferToAccount(@RequestBody @Valid TransferAccount transferaccount) {
+    log.info(String.format("Transfer From %s To %s Amount: %s",transferaccount.getDebitAccount(),transferaccount.getCreditAccount(),transferaccount.getAmount()));
+    try {
+      return new ResponseEntity<String>(this.accountsService.transferToAccount(transferaccount.getDebitAccount(), transferaccount.getCreditAccount(), transferaccount.getAmount()), HttpStatus.OK);
+    } catch (TransferAccountException | InsufficientBalanceException tae) {
+      return new ResponseEntity<String>(tae.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
   }
 
 }

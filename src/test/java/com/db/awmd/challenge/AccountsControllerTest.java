@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
 import com.db.awmd.challenge.domain.Account;
+import com.db.awmd.challenge.exception.InsufficientBalanceException;
 import com.db.awmd.challenge.service.AccountsService;
 import java.math.BigDecimal;
 import org.junit.Before;
@@ -101,4 +102,19 @@ public class AccountsControllerTest {
       .andExpect(
         content().string("{\"accountId\":\"" + uniqueAccountId + "\",\"balance\":123.45}"));
   }
+
+  @Test
+  public void transferTest() throws Exception{
+    this.mockMvc.perform(post("/v1/accounts").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"accountId\":\"Id-1234\",\"balance\":100000}")).andExpect(status().isCreated());
+
+    this.mockMvc.perform(post("/v1/accounts").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"accountId\":\"Id-1235\",\"balance\":0}")).andExpect(status().isCreated());
+
+    this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"debitAccount\": \"Id-1234\", \"creditAccount\":\"Id-1235\",\"amount\":1000}")).andExpect(status().isOk());
+
+
+  }
+
 }

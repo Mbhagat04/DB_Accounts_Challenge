@@ -10,13 +10,21 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppC
 import com.db.awmd.challenge.domain.Account;
 import com.db.awmd.challenge.exception.InsufficientBalanceException;
 import com.db.awmd.challenge.service.AccountsService;
+
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.*;
+
+import com.sun.org.apache.xpath.internal.objects.XString;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.config.Task;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -113,6 +121,40 @@ public class AccountsControllerTest {
 
     this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
             .content("{\"debitAccount\": \"Id-1234\", \"creditAccount\":\"Id-1235\",\"amount\":1000}")).andExpect(status().isOk());
+
+  }
+
+  @Test
+    public void transferTestMultipleTread() throws Exception {
+
+      this.mockMvc.perform(post("/v1/accounts").contentType(MediaType.APPLICATION_JSON)
+              .content("{\"accountId\":\"Id-1234\",\"balance\":100000}")).andExpect(status().isCreated());
+
+      this.mockMvc.perform(post("/v1/accounts").contentType(MediaType.APPLICATION_JSON)
+              .content("{\"accountId\":\"Id-1235\",\"balance\":0}")).andExpect(status().isCreated());
+    this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"debitAccount\": \"Id-1234\", \"creditAccount\":\"Id-1235\",\"amount\":1000}")).andExpect(status().isOk());
+
+
+      ExecutorService executorService =  Executors.newFixedThreadPool(2);
+
+      Runnable task = () -> {
+        System.out.println("Schedule: " + System.nanoTime());
+        taskTransfer();
+      };
+      executorService.execute(task);
+      executorService.awaitTermination(5,TimeUnit.SECONDS);
+      executorService.execute(task);
+  }
+
+  void taskTransfer(){
+      try {
+          this.mockMvc.perform(post("/v1/accounts/transfer").contentType(MediaType.APPLICATION_JSON)
+                  .content("{\"debitAccount\": \"Id-1234\", \"creditAccount\":\"Id-1235\",\"amount\":1000}")).andExpect(status().isOk());
+      } catch (Exception e) {
+          e.printStackTrace();
+      }
+
 
 
   }
